@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Faceoff by NHL Analytica</title>
+<meta name="description" content="Pick tonight’s NHL winners, go head to head with the NHL Analytica model, and share your result card.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Extra+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ice:#EEF3F6; --ice-2:#E1E9EF; --surface:#FFFFFF;
+  --ink:#0D2342; --ink-soft:#5A6B7C;
+  --blue:#1F4FA3; --red:#C8102E; --line:#C9D5DE;
+  --good:#1E7D4F; --bad:#C8102E;
+  --display:"Saira Extra Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ice:#0B1A2E; --ice-2:#13263E; --surface:#172C46;
+    --ink:#E8EFF5; --ink-soft:#9DB0C2; --blue:#6E9BEA; --red:#F0546B; --line:#2A4160;
+    --good:#4CC38A; --bad:#F0546B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ice:#0B1A2E; --ice-2:#13263E; --surface:#172C46;
+  --ink:#E8EFF5; --ink-soft:#9DB0C2; --blue:#6E9BEA; --red:#F0546B; --line:#2A4160;
+  --good:#4CC38A; --bad:#F0546B; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--ice);color:var(--ink);font:400 16px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+.wrap{max-width:720px;margin:0 auto;padding:0 18px 64px}
+header{position:relative;padding:28px 0 22px;border-bottom:6px solid var(--blue)}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:2px;background:var(--red)}
+.brand{font:800 clamp(56px,16vw,104px)/.82 var(--display);margin:0;text-transform:uppercase}
+.sub{margin:10px 0 0;color:var(--ink-soft);max-width:46ch}
+.sub b{color:var(--ink);font-weight:600}
+nav{display:flex;gap:6px;margin:34px 0 22px}
+nav button{flex:1;font:600 16px/1 var(--body);padding:14px 8px;border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--ice)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.note{font-size:14px;color:var(--ink-soft);margin:0 0 16px}
+.err{color:var(--bad);font-size:14px;min-height:1.5em;margin:6px 0 0}
+
+.who{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+.who h2{font:800 30px/1 var(--display);margin:0 0 6px;text-transform:uppercase}
+.who form{display:flex;gap:8px;margin-top:10px}
+.who input{flex:1}
+.mystats{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.mystats strong{font:800 28px/1 var(--display)}
+.linkbtn{background:none;border:0;color:var(--blue);font:600 14px var(--body);cursor:pointer;padding:4px 0}
+
+.datebar{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.datebar h3{font:800 28px/1 var(--display);margin:0;text-transform:uppercase}
+.datebar button{font:600 20px var(--body);width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+
+.game{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--line)}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+.live{color:var(--red);font-weight:600}
+.teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch}
+.team{font:inherit;color:var(--ink);background:var(--ice-2);border:2px solid transparent;border-radius:10px;padding:12px 8px;cursor:pointer;text-align:center;position:relative}
+.team .abbr{display:block;font:800 32px/1 var(--display)}
+.team .nm{display:block;font-size:13px;color:var(--ink-soft)}
+.team .sc{position:absolute;top:8px;right:10px;font:800 24px/1 var(--display)}
+.team[aria-pressed="true"]{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--surface))}
+.team:disabled{cursor:default}
+.team.won .abbr{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px}
+.at{align-self:center;font:600 14px var(--body);color:var(--ink-soft)}
+.prob{margin-top:12px;font-size:13px;color:var(--ink-soft)}
+.bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--ice-2)}
+.bar span:first-child{background:var(--red)} .bar span:last-child{background:var(--blue)}
+.probrow{display:flex;justify-content:space-between}
+.result{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.tag{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px}
+.tag.ok{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.tag.no{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--ink-soft)}
+
+.score{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0 4px}
+.score div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.score strong{display:block;font:800 52px/1 var(--display)}
+.score span{font-size:14px;color:var(--ink-soft)}
+.preview{margin-top:16px;border-radius:14px;overflow:hidden;border:1px solid var(--line);max-width:420px}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:8px}
+.ghost{display:inline-block;text-decoration:none;font:600 15px var(--body);padding:12px 16px;border-radius:10px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin-bottom:14px}
+.seg button{font:600 14px var(--body);padding:8px 16px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--ice)}
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+th,td{padding:12px 14px;text-align:left;font-size:15px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--ink-soft);font-size:13px}
+td.n{font:800 22px/1 var(--display);width:44px}
+td.r,th.r{text-align:right}
+tr.me td{background:color-mix(in srgb,var(--blue) 12%,var(--surface))}
+tr.bot td{color:var(--blue);font-style:italic}
+
+form.card{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:500}
+label.full{grid-column:1/-1}
+input,select{font:500 16px var(--body);padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+footer{margin-top:40px;font-size:13px;color:var(--ink-soft)}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="brand">Faceoff</h1>
+    <p class="sub">Pick tonight’s winners, go head to head with the <b>NHL Analytica</b> model, and share your result card.</p>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" id="tab-picks" aria-selected="true" aria-controls="panel-picks">Picks</button>
+    <button role="tab" id="tab-board" aria-selected="false" aria-controls="panel-board">Leaderboard</button>
+    <button role="tab" id="tab-card" aria-selected="false" aria-controls="panel-card">Player card</button>
+  </nav>
+
+  <section id="panel-picks" role="tabpanel" aria-labelledby="tab-picks">
+    <div class="who" id="who"></div>
+    <div class="datebar">
+      <button id="prev" aria-label="Previous day">‹</button>
+      <h3 id="dateLabel">Tonight</h3>
+      <button id="next" aria-label="Next day">›</button>
+    </div>
+    <p class="note" id="slateNote">Loading games…</p>
+    <div id="games"></div>
+    <div id="results" hidden>
+      <div class="score">
+        <div><strong id="youScore">0</strong><span id="youLabel">You</span></div>
+        <div><strong id="modelScore">0</strong><span>Model, same games</span></div>
+      </div>
+      <div class="preview"><img id="resultImg" alt="Your Faceoff result card"></div>
+      <p class="hint">On a phone, press and hold the card to save or share it.</p>
+      <div class="row"><a class="ghost" id="saveResult" download="faceoff-result.png">Save result card</a></div>
+    </div>
+  </section>
+
+  <section id="panel-board" role="tabpanel" aria-labelledby="tab-board" hidden>
+    <div class="seg" role="group" aria-label="Leaderboard range">
+      <button data-scope="season" aria-pressed="true">Season</button>
+      <button data-scope="day" aria-pressed="false">Tonight</button>
+    </div>
+    <div id="board"></div>
+  </section>
+
+  <section id="panel-card" role="tabpanel" aria-labelledby="tab-card" hidden>
+    <p class="note">Enter a player’s season line and get a card sized for Instagram and X.</p>
+    <form class="card" id="cardForm" autocomplete="off">
+      <label class="full">Player name<input name="name" value="Your Player" maxlength="28"></label>
+      <label>Team<select name="team"></select></label>
+      <label>Number<input name="num" inputmode="numeric" value="27" maxlength="2"></label>
+      <label>Position<select name="pos"><option>C</option><option>LW</option><option>RW</option><option>D</option><option>G</option></select></label>
+      <label>Games played<input name="gp" inputmode="numeric" value="12"></label>
+      <label>Goals<input name="g" inputmode="numeric" value="8"></label>
+      <label>Assists<input name="a" inputmode="numeric" value="9"></label>
+      <label>Plus/minus<input name="pm" inputmode="numeric" value="5"></label>
+      <label>Avg TOI<input name="toi" value="19:42" maxlength="5"></label>
+      <label class="full">Headline<input name="line" value="Point-per-game pace through October" maxlength="44"></label>
+    </form>
+    <div class="preview"><img id="playerImg" alt="Player stat card preview"></div>
+    <p class="hint">On a phone, press and hold the card to save or share it.</p>
+    <div class="row"><a class="ghost" id="savePlayer" download="player-card.png">Save player card</a></div>
+  </section>
+
+  <footer>Faceoff is part of <a href="https://nhlanalytica.com">NHL Analytica</a>. Schedules and scores from the NHL. Model odds are set when a game is first posted and don’t change.</footer>
+</div>
+
+<canvas id="cv" width="1080" height="1350" class="sr" aria-hidden="true"></canvas>
+
+<script>
+const TEAMS = {ANA:"Ducks",BOS:"Bruins",BUF:"Sabres",CAR:"Hurricanes",CBJ:"Blue Jackets",CGY:"Flames",CHI:"Blackhawks",COL:"Avalanche",DAL:"Stars",DET:"Red Wings",EDM:"Oilers",FLA:"Panthers",LAK:"Kings",MIN:"Wild",MTL:"Canadiens",NJD:"Devils",NSH:"Predators",NYI:"Islanders",NYR:"Rangers",OTT:"Senators",PHI:"Flyers",PIT:"Penguins",SEA:"Kraken",SJS:"Sharks",STL:"Blues",TBL:"Lightning",TOR:"Maple Leafs",UTA:"Utah",VAN:"Canucks",VGK:"Golden Knights",WPG:"Jets",WSH:"Capitals"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let me = null, slate = null, viewDate = null, pollTimer = null, boardScope = 'season';
+
+async function api(path, opts={}){
+  const OFFLINE = 'Can’t reach the Faceoff server. Check your connection and refresh.';
+  let r;
+  try{ r = await fetch(path, {credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opts}); }
+  catch(e){ throw new Error(OFFLINE); }
+  const data = await r.json().catch(()=>null);
+  if(data === null) throw new Error(OFFLINE);
+  if(!r.ok) throw new Error(data.error || 'Something went wrong. Try again.');
+  return data;
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('[role=tab]').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('[role=tab]').forEach(x=>{
+    const on = x===t; x.setAttribute('aria-selected',on);
+    $('#'+x.getAttribute('aria-controls')).hidden=!on;
+  });
+  if(t.id==='tab-card') drawPlayer();
+  if(t.id==='tab-board') loadBoard();
+  if(t.id==='tab-picks' && slate) renderResults();
+}));
+
+/* ---------- user ---------- */
+function renderWho(error=''){
+  const box = $('#who');
+  if(!me){
+    box.innerHTML = `<h2>Join the leaderboard</h2>
+      <p class="note" style="margin:0">Pick a name to save your picks and rank against other fans.</p>
+      <form id="nickForm"><input name="nickname" maxlength="20" placeholder="Your name" aria-label="Leaderboard name" required>
+      <button class="ghost" type="submit">Save name</button></form><p class="err">${esc(error)}</p>`;
+  } else {
+    const s = me.stats, v = s.vs_model;
+    const acc = s.graded ? Math.round(100*s.correct/s.graded)+'%' : '—';
+    box.innerHTML = `<div class="mystats"><h2>${esc(me.user.nickname)}</h2>
+      <button class="linkbtn" id="rename">Change name</button></div>
+      <div class="mystats"><span><strong>${s.correct}/${s.graded}</strong> correct (${acc})</span>
+      <span><strong>${s.streak}</strong> in a row</span>
+      <span><strong>${v.w}-${v.l}-${v.t}</strong> vs model</span></div>
+      <form id="nickForm" hidden><input name="nickname" maxlength="20" value="${esc(me.user.nickname)}" aria-label="Leaderboard name">
+      <button class="ghost" type="submit">Save name</button></form><p class="err">${esc(error)}</p>`;
+    $('#rename').onclick = () => { $('#nickForm').hidden = false; $('#nickForm input').focus(); };
+  }
+  $('#nickForm').onsubmit = async e => {
+    e.preventDefault();
+    try{ me = await api('/api/me',{method:'POST',body:JSON.stringify({nickname:e.target.nickname.value})}); renderWho(); renderGames(); }
+    catch(err){ renderWho(err.message); }
+  };
+}
+async function loadMe(){ const d = await api('/api/me'); me = d.user ? d : null; renderWho(); }
+
+/* ---------- slate ---------- */
+function shiftDate(iso, n){ const d = new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function labelDate(iso){
+  if(slate && iso===slate.today) return 'Tonight';
+  if(slate && iso===shiftDate(slate.today,-1)) return 'Last night';
+  if(slate && iso===shiftDate(slate.today,1)) return 'Tomorrow';
+  return new Date(iso+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'});
+}
+async function loadSlate(date){
+  try{
+    slate = await api('/api/slate'+(date?`?date=${date}`:''));
+    viewDate = slate.date;
+    $('#dateLabel').textContent = labelDate(viewDate);
+    renderGames(); renderResults();
+  }catch(err){ $('#slateNote').textContent = err.message; }
+  clearTimeout(pollTimer);
+  const active = slate && slate.games.some(g=>['LIVE','CRIT','PRE'].includes(g.state) || (g.locked && !g.winner));
+  if(active) pollTimer = setTimeout(()=>{ loadSlate(viewDate); loadMe(); }, 60000);
+}
+$('#prev').onclick = ()=> loadSlate(shiftDate(viewDate,-1));
+$('#next').onclick = ()=> loadSlate(shiftDate(viewDate,1));
+
+function statusText(g){
+  if(g.winner) return 'Final' + (g.period_type && g.period_type!=='REG' ? ' ('+g.period_type+')' : '');
+  if(['LIVE','CRIT'].includes(g.state)) return '<span class="live">Live</span>';
+  if(g.locked) return 'In progress';
+  return new Date(g.start_utc).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+}
+function renderGames(){
+  const box = $('#games'); box.innerHTML='';
+  if(!slate) return;
+  const open = slate.games.filter(g=>!g.locked).length;
+  $('#slateNote').textContent = !slate.games.length ? '' :
+    !me && open ? 'Save a name above to make picks.' :
+    open ? `${open} game${open>1?'s':''} open. Picks lock at puck drop.` : 'All games on this date are locked.';
+  if(!slate.games.length){ box.innerHTML = '<div class="empty">No games on this date. Try another day.</div>'; return; }
+  slate.games.forEach(g=>{
+    const el = document.createElement('div'); el.className='game';
+    const showScore = g.home_score!=null && g.locked;
+    const team = side => {
+      const ab = g[side], sc = g[side+'_score'];
+      return `<button class="team${g.winner===ab?' won':''}" data-id="${g.id}" data-t="${esc(ab)}" aria-pressed="${g.my_pick===ab}" ${g.locked||!me?'disabled':''}>
+        ${showScore?`<span class="sc">${sc}</span>`:''}<span class="abbr">${esc(ab)}</span><span class="nm">${esc(g[side+'_name'])}</span></button>`;
+    };
+    const ph = Math.round(g.p_home*100), pa = 100-ph;
+    let res = '';
+    if(g.winner && g.my_pick){
+      res = `<div class="result"><span>You picked ${esc(g.my_pick)}, model picked ${esc(g.model_pick)}</span>
+        <span class="tag ${g.correct?'ok':'no'}">${g.correct?'Correct':'Missed'}</span></div>`;
+    } else if(g.locked && !g.my_pick && me){
+      res = `<div class="result"><span>No pick made</span></div>`;
+    }
+    el.innerHTML = `<div class="meta"><span>${statusText(g)}</span><span>Model picks ${esc(g.model_pick)}</span></div>
+      <div class="teams">${team('away')}<span class="at">at</span>${team('home')}</div>
+      <div class="prob"><div class="probrow"><span>${pa}%</span><span>${ph}%</span></div>
+      <div class="bar"><span style="width:${pa}%"></span><span style="width:${ph}%"></span></div></div>${res}`;
+    box.appendChild(el);
+  });
+  box.querySelectorAll('.team:not(:disabled)').forEach(b=>b.addEventListener('click',async()=>{
+    const g = slate.games.find(x=>String(x.id)===b.dataset.id), prev = g.my_pick;
+    g.my_pick = b.dataset.t; renderGames();
+    try{ await api('/api/pick',{method:'POST',body:JSON.stringify({game_id:g.id,team:g.my_pick})}); }
+    catch(err){ g.my_pick = prev; renderGames(); $('#slateNote').textContent = err.message; if(/locked/i.test(err.message)) loadSlate(viewDate); }
+  }));
+}
+
+/* ---------- result card ---------- */
+function nightTally(){
+  const graded = slate.games.filter(g=>g.winner && g.my_pick);
+  return {graded, you: graded.filter(g=>g.correct).length, bot: graded.filter(g=>g.model_pick===g.winner).length};
+}
+function renderResults(){
+  const t = slate && me ? nightTally() : null;
+  if(!t || !t.graded.length){ $('#results').hidden = true; return; }
+  $('#results').hidden = false;
+  $('#youScore').textContent = t.you; $('#modelScore').textContent = t.bot;
+  $('#youLabel').textContent = me.user.nickname;
+  drawResult(t);
+  $('#resultImg').src = $('#saveResult').href = cv.toDataURL('image/png');
+}
+
+const cv = $('#cv'), cx = cv.getContext('2d');
+const W=1080, H=1350;
+const C = {ice:'#EEF3F6', ink:'#0D2342', blue:'#1F4FA3', red:'#C8102E', soft:'#5A6B7C', good:'#1E7D4F'};
+const D = '"Saira Extra Condensed", "Arial Narrow", Impact, sans-serif';
+const B = '"Barlow", system-ui, sans-serif';
+function rinkBase(){
+  cx.textAlign='left'; cx.textBaseline='alphabetic'; cx.globalAlpha=1;
+  cx.fillStyle=C.ice; cx.fillRect(0,0,W,H);
+  cx.fillStyle=C.blue; cx.fillRect(0,250,W,26);
+  cx.fillStyle=C.red;  cx.fillRect(0,300,W,8);
+  cx.strokeStyle=C.red; cx.lineWidth=10;
+  cx.beginPath(); cx.arc(W-90,H-120,300,0,Math.PI*2); cx.stroke();
+  cx.fillStyle=C.red; cx.beginPath(); cx.arc(W-90,H-120,26,0,Math.PI*2); cx.fill();
+  cx.fillStyle=C.ink; cx.font=`800 150px ${D}`; cx.fillText('FACEOFF',64,200);
+  cx.font=`500 34px ${B}`; cx.fillStyle=C.soft; cx.textAlign='right';
+  cx.fillText('faceoff.nhlanalytica.com',W-64,200); cx.textAlign='left';
+}
+function fitText(txt, maxW, size, weight, fam){
+  let s=size; do{ cx.font=`${weight} ${s}px ${fam}`; s-=4; }while(cx.measureText(txt).width>maxW && s>40);
+}
+function drawResult(t){
+  rinkBase();
+  cx.fillStyle=C.ink; cx.font=`600 40px ${B}`;
+  const d = new Date(viewDate+'T12:00:00Z').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});
+  cx.fillText(d,64,380);
+  cx.font=`800 260px ${D}`; cx.fillText(`${t.you}`,64,620);
+  const yw = cx.measureText(`${t.you}`).width;
+  cx.fillStyle=C.soft; cx.font=`800 120px ${D}`; cx.fillText('vs',64+yw+30,600);
+  const vw = cx.measureText('vs').width;
+  cx.fillStyle=C.blue; cx.font=`800 260px ${D}`; cx.fillText(`${t.bot}`,64+yw+vw+60,620);
+  cx.fillStyle=C.ink; fitText(me.user.nickname, yw+vw+20, 36, 600, B); cx.fillText(me.user.nickname,70,670);
+  cx.fillStyle=C.blue; cx.font=`600 36px ${B}`; cx.fillText('Model',64+yw+vw+66,670);
+  const rows = t.graded.slice(0,7);
+  let y=770;
+  rows.forEach(g=>{
+    cx.fillStyle = g.correct?C.good:C.red;
+    cx.beginPath(); cx.arc(84,y-14,16,0,Math.PI*2); cx.fill();
+    cx.fillStyle=C.ink; cx.font=`800 52px ${D}`; cx.fillText(g.my_pick,124,y);
+    cx.font=`500 32px ${B}`; cx.fillStyle=C.soft;
+    const ot = g.period_type && g.period_type!=='REG' ? ' '+g.period_type : '';
+    cx.fillText(`${g.away} ${g.away_score}–${g.home_score} ${g.home}${ot}`,250,y);
+    y+=66;
+  });
+  if(t.graded.length>rows.length){ cx.fillStyle=C.soft; cx.font=`500 30px ${B}`; cx.fillText(`+${t.graded.length-rows.length} more`,124,y); }
+  const s = me.stats, v = s.vs_model;
+  cx.fillStyle=C.ink; cx.font=`600 38px ${B}`;
+  cx.fillText(`${s.streak} in a row  |  ${v.w}-${v.l}-${v.t} vs model`,64,H-70);
+}
+
+/* ---------- leaderboard ---------- */
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+  boardScope=b.dataset.scope;
+  document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  loadBoard();
+});
+async function loadBoard(){
+  const box = $('#board');
+  try{
+    const q = boardScope==='day' ? `?scope=day&date=${viewDate||''}` : '?scope=season';
+    const d = await api('/api/leaderboard'+q);
+    const pct = (c,n) => n ? Math.round(100*c/n)+'%' : '—';
+    if(!d.rows.length){
+      box.innerHTML = `<div class="empty">No graded picks yet. Make tonight’s picks and check back after the final horn.</div>`;
+      return;
+    }
+    box.innerHTML = `<table><thead><tr><th>#</th><th>Name</th><th class="r">Correct</th><th class="r">Hit rate</th></tr></thead><tbody>
+      ${d.rows.map((r,i)=>`<tr class="${r.nickname===d.me?'me':''}"><td class="n">${i+1}</td><td>${esc(r.nickname)}</td>
+        <td class="r">${r.correct}/${r.graded}</td><td class="r">${pct(r.correct,r.graded)}</td></tr>`).join('')}
+      <tr class="bot"><td class="n"></td><td>NHL Analytica model</td><td class="r">${d.model.correct}/${d.model.graded}</td><td class="r">${pct(d.model.correct,d.model.graded)}</td></tr>
+      </tbody></table>`;
+  }catch(err){ box.innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+
+/* ---------- player card ---------- */
+const form = $('#cardForm');
+form.team.innerHTML = Object.keys(TEAMS).map(k=>`<option value="${k}" ${k==='NYR'?'selected':''}>${k} ${TEAMS[k]}</option>`).join('');
+const num = v => { const n=parseInt(v,10); return isNaN(n)?0:n; };
+function drawPlayer(){
+  const f = Object.fromEntries(new FormData(form));
+  const g=num(f.g), a=num(f.a), gp=num(f.gp), pm=num(f.pm), pts=g+a;
+  const name = (f.name||'Player').toUpperCase();
+  rinkBase();
+  cx.save(); cx.globalAlpha=.12; cx.fillStyle=C.blue; cx.font=`800 620px ${D}`;
+  cx.textAlign='right'; cx.fillText(String(f.num||'').slice(0,2),W-40,860); cx.restore();
+  cx.fillStyle=C.soft; cx.font=`600 40px ${B}`;
+  cx.fillText(`${f.team} ${TEAMS[f.team]}  ${f.pos}  #${f.num}`,64,390);
+  cx.fillStyle=C.ink; fitText(name,W-128,170,800,D); cx.fillText(name,64,560);
+  cx.fillStyle=C.red; cx.font=`600 40px ${B}`; cx.fillText(f.line||'',64,630);
+  const stats=[['GP',gp],['G',g],['A',a],['PTS',pts],['+/-',(pm>0?'+':'')+pm],['TOI',f.toi||'—']];
+  stats.forEach((s,i)=>{
+    const x=64+(i%3)*320, y=800+Math.floor(i/3)*230;
+    cx.fillStyle=C.soft; cx.font=`600 36px ${B}`; cx.fillText(s[0],x,y);
+    cx.fillStyle = s[0]==='PTS'?C.blue:C.ink; cx.font=`800 140px ${D}`; cx.fillText(String(s[1]),x,y+130);
+  });
+  cx.fillStyle=C.ink; cx.font=`600 38px ${B}`;
+  cx.fillText(`${gp?(pts/gp).toFixed(2):'0.00'} points per game`,64,H-70);
+  const url = cv.toDataURL('image/png');
+  $('#playerImg').src = url; $('#savePlayer').href = url;
+  $('#savePlayer').download = (f.name||'player').trim().replace(/\s+/g,'-').toLowerCase()+'-card.png';
+}
+let t; form.addEventListener('input',()=>{clearTimeout(t); t=setTimeout(drawPlayer,120);});
+
+/* ---------- boot ---------- */
+(async()=>{
+  await (document.fonts ? document.fonts.ready : Promise.resolve());
+  try{ await loadMe(); }catch(e){ renderWho(e.message); }
+  await loadSlate();
+  drawPlayer();
+  if(slate) renderResults();
+})();
+</script>
+</body>
+</html>
